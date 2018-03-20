@@ -64,7 +64,7 @@ var handlers = {
     'LaunchRequest': function () {
         if(!this.attributes.userId){
 
-            this.attributes.teams = teams;
+            this.attributes.teamlist = teams;
             this.attributes.players = players;
             this.response.speak("Vuvuzela.mp3 Welcome to IPL Auction. Choose a team from Rajasthan, Mumbai, Chennai, Delhi, Punjab, Bangalore, Hyderabad and Kolkata to continue.").listen('You have to choose a team to continue.');
             this.emit(':responseReady');
@@ -78,7 +78,18 @@ var handlers = {
         this.emit(':responseReady');
     },
     'startIntent': function () {
+        this.response.speak("All righty! The first set of players going under the hammer will be batsmen. The first batsman going up for auction is Ajinkya Rahane. The starting bid is INR 10000000. Would you like to place a bid?").listen('You can ask for any other crypto\'s price.');
+        this.emit(':responseReady');
+    },
+
+    'AMAZON.YesIntent': function () {
+        bidder(this.attributes.teamlist,);
+
         this.response.speak("You will begin with INR 15,00,00,000 in your purse. You will need to form a team of 6 players with atleast 3 batsmen, 2 bowlers and 1 wicket keeper. Do you want to hear the rules again or shall we start?").listen('You can ask for any other crypto\'s price.');
+        this.emit(':responseReady');
+    },
+    'AMAZON.NoIntent': function () {
+        this.response.speak('Cancel');
         this.emit(':responseReady');
     },
     'AMAZON.HelpIntent': function () {
@@ -111,7 +122,18 @@ var handlers = {
 };
 
 
-
+function bidder(slot, useId){
+    if(slot.value == undefined){
+        return "undefined";
+    }
+    let value = slot.value;
+    let resolution = (slot.resolutions && slot.resolutions.resolutionsPerAuthority && slot.resolutions.resolutionsPerAuthority.length > 0) ? slot.resolutions.resolutionsPerAuthority[0] : null;
+    if(resolution && resolution.status.code == 'ER_SUCCESS_MATCH'){
+        let resolutionValue = resolution.values[0].value;
+        value = resolutionValue.id && useId ? resolutionValue.id : resolutionValue.name;
+    }
+    return value;
+}
 
 function slotValue(slot, useId){
     if(slot.value == undefined){
