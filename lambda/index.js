@@ -1,37 +1,46 @@
 "use strict";
 var Alexa = require("alexa-sdk");
+var chance = require('chance').Chance();
 const dashbot = require('dashbot')('NnwomYrdlu6OSoxiWhlmLiJ5a639lXtjcicrMuxn').alexa;
 
 var teams = {
-    "Rajasthan" : {
+    "0" : {
+        "name": "Rajasthan",
         "budget": 150000000,
         "team": []
     },
-    "Mumbai": {
+    "1": {
+        "name": "Mumbai",
         "budget": 150000000,
         "team": []
     },
-    "Chennai": {
+    "2": {
+        "name": "Chennai",
         "budget": 150000000,
         "team": []
     },
-    "Delhi": {
+    "3": {
+        "name": "Delhi",
         "budget": 150000000,
         "team": []
     },
-    "Punjab": {
+    "4": {
+        "name": "Punjab",
         "budget": 150000000,
         "team": []
     },
-    "Bangalore": {
+    "5": {
+        "name": "Bangalore",
         "budget": 150000000,
         "team": []
     },
-    "Hyderabad": {
+    "6": {
+        "name": "Hyderabad",
         "budget": 150000000,
         "team": []
     },
-    "Kolkata": {
+    "7": {
+        "name": "Kolkata",
         "budget": 150000000,
         "team": []
     },
@@ -96,6 +105,7 @@ var players = {
 var handlers = Alexa.CreateStateHandler("_NEW", {
     'LaunchRequest': function () {
         if(!this.attributes.userId){
+            this.handler.state = "_NEW";
             this.attributes.teamlist = teams;
             this.attributes.playerslist = players;
             this.response.speak("Vuvuzela.mp3 Welcome to IPL Auction. Choose a team from Rajasthan, Mumbai, Chennai, Delhi, Punjab, Bangalore, Hyderabad and Kolkata to continue.").listen('You have to choose a team to continue.');
@@ -105,17 +115,19 @@ var handlers = Alexa.CreateStateHandler("_NEW", {
         this.emit(':responseReady');
     },   
     'teamSelectionIntent': function () {
+        this.handler.state = "_NEW";
         this.attributes.teamchosen = slotValue(this.event.request.intent.slots.teamchosen);
         this.response.speak(`You chose ${this.attributes.teamchosen}. You will begin with INR 15,00,00,000 in your purse. You will need to form a team of 6 players with at least 3 batsmen, 2 bowlers and 1 wicket keeper. Do you want to hear the rules again or shall we start?`).listen('You can ask for any other crypto\'s price.');
         this.emit(':responseReady');
     },
     'AMAZON.YesIntent': function () {
-        this.emit('startIntent');
+        this.handler.state = "_NEW";
+        this.emitWithState('startIntent');
     },
     'startIntent': function () {
         this.handler.state = "_BID";
-        var currentPlayer = playerToBid(this.attributes.playerslist);
-        this.response.speak(`All righty! The first set of players going under the hammer will be batsmen. The first batsman going up for auction is ${currentPlayer.name} with an overall of ${currentPlayer.points}. The starting bid is INR ${currentPlayer.baseprice}. Would you like to place a bid?`).listen('You can ask for any other crypto\'s price.');
+        this.attributes.currentPlayer = playerToBid(this.attributes.playerslist);
+        this.response.speak(`All righty! The first set of players going under the hammer will be batsmen. The first batsman going up for auction is ${this.attributes.currentPlayer.name} with an overall of ${this.attributes.currentPlayer.points}. The starting bid is INR ${this.attributes.currentPlayer.baseprice}. Would you like to place a bid?`).listen('You can ask for any other crypto\'s price.');
         this.emit(':responseReady');
     },
 
@@ -157,10 +169,10 @@ var bidHandlers = Alexa.CreateStateHandler("_BID", {
     
 
     'AMAZON.YesIntent': function () {
-        
-        console.log(this.attributes.players.Batsmen["Ajinkya Rahane"]);
-        bidder(this.attributes.teamchosen,this.attributes.teamlist,this.attributes.players.Batsmen["Ajinkya Rahane"]);
-        this.response.speak(`You will bid for ${this.attributes.players.Batsmen["Ajinkya Rahane"].baseprice}`).listen('You can ask for any other crypto\'s price.');
+    
+        let resp = bidder(this.attributes.teamchosen,this.attributes.teamlist,this.attributes.currentPlayer);
+
+        this.response.speak(resp).listen('You can ask for any other crypto\'s price.');
         this.emit(':responseReady');
     },
     'AMAZON.NoIntent': function () {
@@ -235,9 +247,36 @@ var bidHandlers = Alexa.CreateStateHandler("_BID", {
 
 
 
-function bidder(myteam, teamlist, currentPlayer){
-    var say = `${myteam} open the bid at`
+function bidder(myteam, teamlist, player){
+
+    let say = `${myteam} open the bid for ${player.name} at ${player.baseprice}. `
+    let currbid = player.baseprice + 5000000;
+
+    var randomNumber = Math.floor(Math.random() * (8));
+    if(randomNumber == 0){
+        say += `<break time="1s"/> Any bids of ${currbid} INR for ${player.name} ? <break time="1s"/> Any bids for ${currbid} ? Looks like there are no further bids for ${player.name} . <break time="2s"/> And he is <break time="1s"/> Sold! To ${myteam} for ${player.baseprice} INR!`;
+        return say;
+    }
+
+    var randomArray = chance.pickset(['0', '1', '2', '3', '4', '5', '6', '7'], randomNumber);
+    console.log(randomArray);
+
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function playerToBid(playerlist){
     let curr = {};
