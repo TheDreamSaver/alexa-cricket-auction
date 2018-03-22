@@ -176,7 +176,10 @@ var bidHandlers = Alexa.CreateStateHandler("_BID", {
         this.emit(':responseReady');
     },
     'AMAZON.NoIntent': function () {
-        this.response.speak('Cancel');
+
+        let resp = bidderNo(this.attributes.teamlist,this.attributes.currentPlayer);
+
+        this.response.speak(resp).listen('You can ask for any other crypto\'s price.');
         this.emit(':responseReady');
     },
 
@@ -248,7 +251,7 @@ var bidHandlers = Alexa.CreateStateHandler("_BID", {
 
 
 function bidder(myteam, teamlist, player){
-
+    let obj = {};
     let say = `${myteam} open the bid for ${player.name} at ${player.baseprice} INR. `
     let currbid = player.baseprice + 5000000;
 
@@ -261,24 +264,26 @@ function bidder(myteam, teamlist, player){
     let randomArray = chance.pickset(['0', '1', '2', '3', '4', '5', '6', '7'], randomNumber);
     console.log(randomArray);
 
-    say += randomBid(randomArray,teamlist, player);
-
+    obj = randomBid(randomArray,teamlist, player);
+    say += obj.resp;
     return say;
 
 }
 
 function randomBid(randArr,teamlist, player){
+    let obj = {
+        resp: "",
+        lastbidby: "",
+        bid: 0
+    };
     let totalBid = Math.floor(Math.random() * (player.randbidamount));
-    let respb = "";
     let currbid = player.baseprice + 5000000;
     let randomNumber = Math.floor(Math.random() * (randArr.length));
     let currrand = randomNumber;
-    console.log(teamlist);
-    console.log(randArr);
-    console.log(randomNumber);
-    console.log(teamlist[randArr[randomNumber]]);
     for(let t = 0; t<totalBid; t++){
-        respb += `${teamlist[randArr[randomNumber]].name} with a bid of ${currbid}. <break time="0.5s"/>`
+        obj.resp += `${teamlist[randArr[randomNumber]].name} with a bid of ${currbid}. <break time="0.5s"/>`
+        obj.bid = currbid;
+        obj.lastbidby = [randArr[randomNumber]];
         currbid += 5000000;
         randomNumber = Math.floor(Math.random() * (randArr.length));
         while(randomNumber == currrand){
@@ -286,13 +291,54 @@ function randomBid(randArr,teamlist, player){
         }
         currrand = randomNumber;
     }
-    return respb;
+    obj.resp += ` Would you like to make a Bid of ${currbid} INR ? `;
+    
+    return obj;
 
 }
 
+function bidderNo(teamlist, player){
+    let obj = {};
+    let say = `The opening bid for ${player.name} is ${player.baseprice} INR. Who wants to bid for ${player.name} at ${player.baseprice}. Oh, `
+    let currbid = player.baseprice;
 
+    let randomNumber = Math.floor(Math.random() * (8));
 
+    let randomArray = chance.pickset(['0', '1', '2', '3', '4', '5', '6', '7'], randomNumber);
+    console.log(randomArray);
 
+    obj = randomBidNo(randomArray,teamlist, player);
+    say += obj.resp;
+    return say;
+
+}
+
+function randomBidNo(randArr,teamlist, player){
+    let obj = {
+        resp: "",
+        lastbidby: "",
+        bid: 0
+    };
+    let totalBid = Math.floor(Math.random() * (player.randbidamount));
+    let currbid = player.baseprice;
+    let randomNumber = Math.floor(Math.random() * (randArr.length));
+    let currrand = randomNumber;
+    for(let t = 0; t<totalBid; t++){
+        obj.resp += `${teamlist[randArr[randomNumber]].name} with a bid of ${currbid}. <break time="0.5s"/>`
+        obj.bid = currbid;
+        obj.lastbidby = [randArr[randomNumber]];
+        currbid += 5000000;
+        randomNumber = Math.floor(Math.random() * (randArr.length));
+        while(randomNumber == currrand){
+            randomNumber = Math.floor(Math.random() * (randArr.length));
+        }
+        currrand = randomNumber;
+    }
+    obj.resp += `<break time="1s"/> Any bids of ${currbid} INR for ${player.name} ? <break time="1s"/> Any bids for ${currbid} ? Looks like there are no further bids for ${player.name} . <break time="2s"/> And he is <break time="1s"/> Sold! To ${teamlist[obj.lastbidby].name} for ${obj.bid} INR!`;
+    
+    return obj;
+
+}
 
 
 
