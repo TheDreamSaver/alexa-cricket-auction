@@ -249,22 +249,46 @@ var bidHandlers = Alexa.CreateStateHandler("_BID", {
 
 function bidder(myteam, teamlist, player){
 
-    let say = `${myteam} open the bid for ${player.name} at ${player.baseprice}. `
+    let say = `${myteam} open the bid for ${player.name} at ${player.baseprice} INR. `
     let currbid = player.baseprice + 5000000;
 
-    var randomNumber = Math.floor(Math.random() * (8));
+    let randomNumber = Math.floor(Math.random() * (8));
     if(randomNumber == 0){
         say += `<break time="1s"/> Any bids of ${currbid} INR for ${player.name} ? <break time="1s"/> Any bids for ${currbid} ? Looks like there are no further bids for ${player.name} . <break time="2s"/> And he is <break time="1s"/> Sold! To ${myteam} for ${player.baseprice} INR!`;
         return say;
     }
 
-    var randomArray = chance.pickset(['0', '1', '2', '3', '4', '5', '6', '7'], randomNumber);
+    let randomArray = chance.pickset(['0', '1', '2', '3', '4', '5', '6', '7'], randomNumber);
     console.log(randomArray);
 
+    say += randomBid(randomArray,teamlist, player);
+
+    return say;
 
 }
 
+function randomBid(randArr,teamlist, player){
+    let totalBid = Math.floor(Math.random() * (player.randbidamount));
+    let respb = "";
+    let currbid = player.baseprice + 5000000;
+    let randomNumber = Math.floor(Math.random() * (randArr.length));
+    let currrand = randomNumber;
+    console.log(teamlist);
+    console.log(randArr);
+    console.log(randomNumber);
+    console.log(teamlist[randArr[randomNumber]]);
+    for(let t = 0; t<totalBid; t++){
+        respb += `${teamlist[randArr[randomNumber]].name} with a bid of ${currbid}. <break time="0.5s"/>`
+        currbid += 5000000;
+        randomNumber = Math.floor(Math.random() * (randArr.length));
+        while(randomNumber == currrand){
+            randomNumber = Math.floor(Math.random() * (randArr.length));
+        }
+        currrand = randomNumber;
+    }
+    return respb;
 
+}
 
 
 
