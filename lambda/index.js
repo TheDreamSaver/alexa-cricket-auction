@@ -99,10 +99,7 @@ var players = {
 }
 
 
-
-
-
-var handlers = Alexa.CreateStateHandler("_NEW", {
+var handlers = {
     'LaunchRequest': function () {
         if(!this.attributes.userId){
             this.handler.state = "_NEW";
@@ -111,8 +108,25 @@ var handlers = Alexa.CreateStateHandler("_NEW", {
             this.response.speak("Vuvuzela.mp3 Welcome to IPL Auction. Choose a team from Rajasthan, Mumbai, Chennai, Delhi, Punjab, Bangalore, Hyderabad and Kolkata to continue.").listen('You have to choose a team to continue.');
             this.emit(':responseReady');
         }
-        this.response.speak("Vuvuzela.mp3 Welcome to IPL Auction. Choose a team from Rajasthan, Mumbai, Chennai, Delhi, Punjab, Bangalore, Hyderabad and Kolkata to continue.").listen('You have to choose a team to continue.');
-        this.emit(':responseReady');
+            this.handler.state = "_NEW";
+            this.response.speak("Vuvuzela.mp3 Welcome to IPL Auction. Choose a team from Rajasthan, Mumbai, Chennai, Delhi, Punjab, Bangalore, Hyderabad and Kolkata to continue.").listen('You have to choose a team to continue.');
+            this.emit(':responseReady');
+    },   
+}
+
+
+var gamehandlers = Alexa.CreateStateHandler("_NEW", {
+    'LaunchRequest': function () {
+        if(!this.attributes.userId){
+            this.handler.state = "_NEW";
+            this.attributes.teamlist = teams;
+            this.attributes.playerslist = players;
+            this.response.speak("Vuvuzela.mp3 Welcome to IPL Auction. Choose a team from Rajasthan, Mumbai, Chennai, Delhi, Punjab, Bangalore, Hyderabad and Kolkata to continue.").listen('You have to choose a team to continue.');
+            this.emit(':responseReady');
+        }
+            this.handler.state = "_NEW";
+            this.response.speak("Vuvuzela.mp3 Welcome to IPL Auction. Choose a team from Rajasthan, Mumbai, Chennai, Delhi, Punjab, Bangalore, Hyderabad and Kolkata to continue.").listen('You have to choose a team to continue.');
+            this.emit(':responseReady');
     },   
     'teamSelectionIntent': function () {
         this.handler.state = "_NEW";
@@ -177,9 +191,10 @@ var bidHandlers = Alexa.CreateStateHandler("_BID", {
     },
     'AMAZON.NoIntent': function () {
 
-        let resp = bidderNo(this.attributes.teamlist,this.attributes.currentPlayer);
-
-        this.response.speak(resp).listen('You can ask for any other crypto\'s price.');
+        let obj = bidderNo(this.attributes.teamlist,this.attributes.currentPlayer);
+        this.attributes.teamlist[obj.lastbidby].budget -= obj.bid;
+        this.attributes.teamlist[obj.lastbidby].team.push(obj.name);
+        this.response.speak(obj.resp).listen('You can ask for any other crypto\'s price.');
         this.emit(':responseReady');
     },
 
@@ -309,13 +324,15 @@ function bidderNo(teamlist, player){
 
     obj = randomBidNo(randomArray,teamlist, player);
     say += obj.resp;
-    return say;
+    obj.resp = say;
+    return obj;
 
 }
 
 function randomBidNo(randArr,teamlist, player){
     let obj = {
         resp: "",
+        name: player.name,
         lastbidby: "",
         bid: 0
     };
@@ -505,7 +522,7 @@ var alexa = Alexa.handler(event, context);
 alexa.dynamoDBTableName = 'CricketAuction';
 
 // Register Handlers
-alexa.registerHandlers(handlers, bidHandlers); 
+alexa.registerHandlers(handlers, bidHandlers, gamehandlers); 
 
 // Start our Alexa code
 alexa.execute(); 
