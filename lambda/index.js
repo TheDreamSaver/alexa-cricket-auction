@@ -131,6 +131,14 @@ var gamehandlers = Alexa.CreateStateHandler("_NEW", {
     'teamSelectionIntent': function () {
         this.handler.state = "_NEW";
         this.attributes.teamchosen = slotValue(this.event.request.intent.slots.teamchosen);
+        for (let [key, value] of Object.entries(this.attributes.teamlist)){
+            console.log(key,value.name, this.attributes.teamchosen);
+            console.log(value.name == this.attributes.teamchosen);
+            if(value.name == this.attributes.teamchosen){
+                this.attributes.teamcode = key;
+                console.log(this.attributes.teamcode);
+            }
+        }
         this.response.speak(`You chose ${this.attributes.teamchosen}. You will begin with INR 15,00,00,000 in your purse. You will need to form a team of 6 players with at least 3 batsmen, 2 bowlers and 1 wicket keeper. Do you want to hear the rules again or shall we start?`).listen('You can ask for any other crypto\'s price.');
         this.emit(':responseReady');
     },
@@ -184,9 +192,9 @@ var bidHandlers = Alexa.CreateStateHandler("_BID", {
 
     'AMAZON.YesIntent': function () {
     
-        let resp = bidder(this.attributes.teamchosen,this.attributes.teamlist,this.attributes.currentPlayer);
-
-        this.response.speak(resp).listen('You can ask for any other crypto\'s price.');
+        this.attributes.objBid = bidder(this.attributes.teamchosen,this.attributes.teamlist,this.attributes.currentPlayer);
+        this.handler.state = "_BIDAGAIN";
+        this.response.speak(this.attributes.objBid.resp).listen('You can ask for any other crypto\'s price.');
         this.emit(':responseReady');
     },
     'AMAZON.NoIntent': function () {
@@ -201,6 +209,62 @@ var bidHandlers = Alexa.CreateStateHandler("_BID", {
 
     'AMAZON.HelpIntent': function () {
         this.handler.state = "_BID";
+        this.response.speak("Alexa will ask you a question, and you have to tell whether it flies or not. You have to respond with a Yes or No. If you are able to answer all of them correctly, you win, else alexa wins. So would you like to play?").listen('Would you like to play?');
+        this.emit(':responseReady');
+    },
+    'AMAZON.CancelIntent': function () {
+        this.handler.state = "_NEW";
+        this.response.speak('I thought we were having a good time. Goodbye!');
+        this.emit(':responseReady');
+    },
+    'AMAZON.StopIntent': function () {
+        this.handler.state = "_NEW";
+        this.response.speak('I thought we were having a good time. Goodbye!');
+        this.emit(':responseReady');
+    },
+    'SessionEndedRequest': function () {
+        this.handler.state = "_NEW";
+        this.response.speak("Goodbye!");
+        this.emit(':responseReady');
+    },
+    'Unhandled': function() {
+        this.handler.state = "_NEW";
+        const message = 'I don\'t get it! Try saying Alexa, Open does it fly!';
+        this.response.speak(message);
+        this.emit(':responseReady');
+    }
+});
+
+
+
+var bidAgainHandlers = Alexa.CreateStateHandler("_BIDAGAIN", {
+    'AMAZON.YesIntent': function () {
+        this.attributes.objBid.bid += 5000000;
+        let currbid = this.attributes.objBid.bid + 5000000;
+
+        let resp = `<break time="1s"/> Any bids of ${currbid} INR for ${this.attributes.objBid.name} ? <break time="1s"/> Any bids for ${currbid} ? Looks like there are no further bids for ${this.attributes.objBid.name} . <break time="2s"/> And he is <break time="1s"/> Sold! To ${this.attributes.teamchosen} for ${this.attributes.objBid.bid} INR!`;
+
+        this.attributes.teamlist[this.attributes.teamcode].budget -= this.attributes.objBid.bid;
+        this.attributes.teamlist[this.attributes.teamcode].team.push(this.attributes.objBid.name);
+
+        this.response.speak(resp).listen('You can ask for any other crypto\'s price.');
+        this.emit(':responseReady');
+    },
+    'AMAZON.NoIntent': function () {
+
+        let currbid = this.attributes.objBid.bid + 5000000;
+
+        let resp = `<break time="1s"/> Any bids of ${currbid} INR for ${this.attributes.objBid.name} ? <break time="1s"/> Any bids for ${currbid} ? Looks like there are no further bids for ${this.attributes.objBid.name} . <break time="2s"/> And he is <break time="1s"/> Sold! To ${this.attributes.teamlist[this.attributes.objBid.lastbidby].name} for ${this.attributes.objBid.bid} INR!`;
+
+        this.attributes.teamlist[this.attributes.objBid.lastbidby].budget -= this.attributes.objBid.bid;
+        this.attributes.teamlist[this.attributes.objBid.lastbidby].team.push(this.attributes.objBid.name);
+
+        this.response.speak(resp).listen('You can ask for any other crypto\'s price.');
+        this.emit(':responseReady');
+    },
+
+    'AMAZON.HelpIntent': function () {
+        this.handler.state = "_BIDAGAIN";
         this.response.speak("Alexa will ask you a question, and you have to tell whether it flies or not. You have to respond with a Yes or No. If you are able to answer all of them correctly, you win, else alexa wins. So would you like to play?").listen('Would you like to play?');
         this.emit(':responseReady');
     },
@@ -261,10 +325,6 @@ var bidHandlers = Alexa.CreateStateHandler("_BID", {
 
 
 
-
-
-
-
 function bidder(myteam, teamlist, player){
     let obj = {};
     let say = `${myteam} open the bid for ${player.name} at ${player.baseprice} INR. `
@@ -281,13 +341,15 @@ function bidder(myteam, teamlist, player){
 
     obj = randomBid(randomArray,teamlist, player);
     say += obj.resp;
-    return say;
+    obj.resp = say;
+    return obj;
 
 }
 
 function randomBid(randArr,teamlist, player){
     let obj = {
         resp: "",
+        name: player.name,
         lastbidby: "",
         bid: 0
     };
@@ -522,7 +584,7 @@ var alexa = Alexa.handler(event, context);
 alexa.dynamoDBTableName = 'CricketAuction';
 
 // Register Handlers
-alexa.registerHandlers(handlers, bidHandlers, gamehandlers); 
+alexa.registerHandlers(handlers, bidHandlers, gamehandlers, bidAgainHandlers); 
 
 // Start our Alexa code
 alexa.execute(); 
