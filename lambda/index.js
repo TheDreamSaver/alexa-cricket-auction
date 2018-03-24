@@ -67,7 +67,7 @@ var players = {
                 "Yuvraj Singh": { 
                     "name": "Yuvraj Singh", 
                     "baseprice": 10000000,
-                    "randbidamount": 15,
+                    "randbidamount": 10,
                     "points": 8,
                     "sold": false
                     },
@@ -90,6 +90,56 @@ var players = {
                 
                 "Chris Gayle": {  
                     "name": "Chris Gayle",
+                    "baseprice": 20000000,
+                    "randbidamount": 20,
+                    "points": 9.5,
+                    "sold": false
+                    }
+                },
+
+    "Bowlers": {
+                "Ravichandran Ashwin": { 
+                    "name": "Ravichandran Ashwin",
+                    "baseprice": 20000000,
+                    "randbidamount": 15,
+                    "points": 8.5,
+                    "sold": false
+                    },
+                
+                "Samuel Badree": {  
+                    "name": "Samuel Badree",
+                    "baseprice": 10000000,
+                    "randbidamount": 10,
+                    "points": 8,
+                    "sold": false
+                    },
+                
+                "Sunil Narine": { 
+                    "name": "Sunil Narine", 
+                    "baseprice": 20000000,
+                    "randbidamount": 20,
+                    "points": 9,
+                    "sold": false
+                    },
+                
+                "Rashid Khan": {  
+                    "name": "Rashid Khan",
+                    "baseprice": 10000000,
+                    "randbidamount": 20,
+                    "points": 9,
+                    "sold": false
+                    },
+                
+                "Morne Morkel": {  
+                    "name": "Morne Morkel",
+                    "baseprice": 10000000,
+                    "randbidamount": 15,
+                    "points": 8.5,
+                    "sold": false
+                    },
+                
+                "Mitchell Starc": {  
+                    "name": "Mitchell Starc",
                     "baseprice": 20000000,
                     "randbidamount": 20,
                     "points": 9.5,
@@ -148,7 +198,12 @@ var gamehandlers = Alexa.CreateStateHandler("_NEW", {
     },
     'startIntent': function () {
         this.handler.state = "_BID";
-        this.attributes.currentPlayer = playerToBid(this.attributes.playerslist);
+        this.attributes.currentPool = "Batsmen";
+        let result = playerToBid(this.attributes.playerslist, this.attributes.currentPool);
+        this.attributes.currentPlayer = result[0];
+        this.attributes.playerlist = result[1];
+        this.attributes.currentPool = result[2];
+        console.log(this.attributes.currentPlayer, this.attributes.playerlist);
         this.response.speak(`All righty! The first set of players going under the hammer will be batsmen. The first batsman going up for auction is ${this.attributes.currentPlayer.name} with an overall of ${this.attributes.currentPlayer.points}. The starting bid is INR ${this.attributes.currentPlayer.baseprice}. Would you like to place a bid?`).listen('You can ask for any other crypto\'s price.');
         this.emit(':responseReady');
     },
@@ -192,7 +247,7 @@ var bidHandlers = Alexa.CreateStateHandler("_BID", {
 
     'AMAZON.YesIntent': function () {
     
-        this.attributes.objBid = bidder(this.attributes.teamchosen,this.attributes.teamlist,this.attributes.currentPlayer);
+        this.attributes.objBid = bidder(this.attributes.teamchosen,this.attributes.teamcode,this.attributes.teamlist,this.attributes.currentPlayer);
         this.handler.state = "_BIDAGAIN";
         this.response.speak(this.attributes.objBid.resp).listen('You can ask for any other crypto\'s price.');
         this.emit(':responseReady');
@@ -202,6 +257,13 @@ var bidHandlers = Alexa.CreateStateHandler("_BID", {
         let obj = bidderNo(this.attributes.teamlist,this.attributes.currentPlayer);
         this.attributes.teamlist[obj.lastbidby].budget -= obj.bid;
         this.attributes.teamlist[obj.lastbidby].team.push([obj.name, obj.points]);
+
+        let result = playerToBid(this.attributes.playerslist, this.attributes.currentPool);
+        this.attributes.currentPlayer = result[0];
+        this.attributes.playerlist = result[1];
+        this.attributes.currentPool = result[2];
+        console.log(this.attributes.currentPlayer, this.attributes.playerlist);
+        obj.resp += ` The next ${this.attributes.currentPool} going up for auction is ${this.attributes.currentPlayer.name} with an overall of ${this.attributes.currentPlayer.points}. The starting bid is INR ${this.attributes.currentPlayer.baseprice}. Would you like to place a bid?`
         this.response.speak(obj.resp).listen('You can ask for any other crypto\'s price.');
         this.emit(':responseReady');
     },
@@ -239,6 +301,8 @@ var bidHandlers = Alexa.CreateStateHandler("_BID", {
 
 var bidAgainHandlers = Alexa.CreateStateHandler("_BIDAGAIN", {
     'AMAZON.YesIntent': function () {
+        console.log(this.attributes.objBid);
+        console.log(this.attributes.objBid.bid);
         this.attributes.objBid.bid += 5000000;
         let currbid = this.attributes.objBid.bid + 5000000;
 
@@ -247,6 +311,12 @@ var bidAgainHandlers = Alexa.CreateStateHandler("_BIDAGAIN", {
         this.attributes.teamlist[this.attributes.teamcode].budget -= this.attributes.objBid.bid;
         this.attributes.teamlist[this.attributes.teamcode].team.push([this.attributes.objBid.name, this.attributes.objBid.points]);
 
+        this.handler.state = "_BID";
+        let result = playerToBid(this.attributes.playerslist,this.attributes.currentPool);
+        this.attributes.currentPlayer = result[0];
+        this.attributes.playerlist = result[1];
+        this.attributes.currentPool = result[2];
+        resp += ` The next ${this.attributes.currentPool} going up for auction is ${this.attributes.currentPlayer.name} with an overall of ${this.attributes.currentPlayer.points}. The starting bid is INR ${this.attributes.currentPlayer.baseprice}. Would you like to place a bid?`
         this.response.speak(resp).listen('You can ask for any other crypto\'s price.');
         this.emit(':responseReady');
     },
@@ -258,6 +328,13 @@ var bidAgainHandlers = Alexa.CreateStateHandler("_BIDAGAIN", {
 
         this.attributes.teamlist[this.attributes.objBid.lastbidby].budget -= this.attributes.objBid.bid;
         this.attributes.teamlist[this.attributes.objBid.lastbidby].team.push([this.attributes.objBid.name, this.attributes.objBid.points]);
+
+        this.handler.state = "_BID";
+        let result = playerToBid(this.attributes.playerslist, this.attributes.currentPool);
+        this.attributes.currentPlayer = result[0];
+        this.attributes.playerlist = result[1];
+        this.attributes.currentPool = result[2];
+        resp += ` The next ${this.attributes.currentPool} going up for auction is ${this.attributes.currentPlayer.name} with an overall of ${this.attributes.currentPlayer.points}. The starting bid is INR ${this.attributes.currentPlayer.baseprice}. Would you like to place a bid?`
 
         this.response.speak(resp).listen('You can ask for any other crypto\'s price.');
         this.emit(':responseReady');
@@ -325,7 +402,7 @@ var bidAgainHandlers = Alexa.CreateStateHandler("_BIDAGAIN", {
 
 
 
-function bidder(myteam, teamlist, player){
+function bidder(myteam, myteamcode, teamlist, player){
     let obj = {};
     let say = `${myteam} open the bid for ${player.name} at ${player.baseprice} INR. `
     let currbid = player.baseprice + 5000000;
@@ -333,11 +410,27 @@ function bidder(myteam, teamlist, player){
     let randomNumber = Math.floor(Math.random() * (8));
     if(randomNumber == 0){
         say += `<break time="1s"/> Any bids of ${currbid} INR for ${player.name} ? <break time="1s"/> Any bids for ${currbid} ? Looks like there are no further bids for ${player.name} . <break time="2s"/> And he is <break time="1s"/> Sold! To ${myteam} for ${player.baseprice} INR!`;
-        return say;
+        obj.resp = say;
+        obj.bid = player.baseprice;
+        obj.points = player.points;
+        obj.name = player.name;
+        obj.lastbidby = myteamcode;
+        return obj;
     }
 
     let randomArray = chance.pickset(['0', '1', '2', '3', '4', '5', '6', '7'], randomNumber);
     console.log(randomArray);
+
+    if(randomArray.length == 1){
+        currbid += 5000000;
+        say += `${teamlist[randomArray[0]].name} with a bid of ${currbid-5000000} INR. <break time="1s"/>  Would you like to make a Bid of ${currbid} INR ? `;
+        obj.resp = say;
+        obj.bid = currbid-5000000;
+        obj.points = player.points;
+        obj.name = player.name;
+        obj.lastbidby = randomArray[0];
+        return obj;
+    }
 
     obj = randomBid(randomArray,teamlist, player);
     say += obj.resp;
@@ -381,10 +474,21 @@ function bidderNo(teamlist, player){
     let currbid = player.baseprice;
 
     let randomNumber = Math.floor(Math.random() * (8));
-
+    if(randomNumber == 0){
+        randomNumber = 2;
+    }
     let randomArray = chance.pickset(['0', '1', '2', '3', '4', '5', '6', '7'], randomNumber);
     console.log(randomArray);
-
+    if(randomArray.length == 1){
+        currbid += 5000000;
+        say += `${teamlist[randomArray[0]].name} with a bid of ${player.baseprice} INR. <break time="1s"/> Any bids of ${currbid} INR for ${player.name} ? <break time="1s"/> Any bids for ${currbid} ? Looks like there are no further bids for ${player.name} . <break time="2s"/> And he is <break time="1s"/> Sold! To ${teamlist[randomArray[0]].name} for ${player.baseprice} INR!`
+        obj.resp = say;
+        obj.bid = player.baseprice;
+        obj.points = player.points;
+        obj.name = player.name;
+        obj.lastbidby = randomArray[0];
+        return obj;
+    }
     obj = randomBidNo(randomArray,teamlist, player);
     say += obj.resp;
     obj.resp = say;
@@ -429,25 +533,31 @@ function randomBidNo(randArr,teamlist, player){
 
 
 
-function playerToBid(playerlist){
+function playerToBid(playerlist, currentPool){
     let curr = {};
     let set = false;
-    for (let [key, value] of Object.entries(playerlist)) {  
-        if(Object.keys(key).length!=0){
-            for (let [keyin, valuein] of Object.entries(value)) { 
-                curr = valuein;
-                delete value.keyin;
-                set = true;
+    console.log(playerlist[currentPool]);
+    if(Object.keys(playerlist[currentPool]).length!=0){
+        for (let [key, value] of Object.entries(playerlist[currentPool])) {  
+            curr = value;
+            console.log(key, value);
+            delete playerlist[currentPool][key];
+
+            console.log(value);
+            set = true;
+            break;
+
+            if(set == true){
                 break;
             }
         }
-        if(set == true){
-            break;
-        }
     }
-    return curr;
+    if(Object.keys(playerlist["Batsmen"]).length==0){
+        currentPool = "Bowlers";
+    }
+    console.log(curr, playerlist);
+    return [curr, playerlist, currentPool];
 }
-
 
 
 
