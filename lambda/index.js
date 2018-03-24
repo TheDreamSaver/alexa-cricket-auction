@@ -201,7 +201,7 @@ var bidHandlers = Alexa.CreateStateHandler("_BID", {
 
         let obj = bidderNo(this.attributes.teamlist,this.attributes.currentPlayer);
         this.attributes.teamlist[obj.lastbidby].budget -= obj.bid;
-        this.attributes.teamlist[obj.lastbidby].team.push(obj.name);
+        this.attributes.teamlist[obj.lastbidby].team.push([obj.name, obj.points]);
         this.response.speak(obj.resp).listen('You can ask for any other crypto\'s price.');
         this.emit(':responseReady');
     },
@@ -245,7 +245,7 @@ var bidAgainHandlers = Alexa.CreateStateHandler("_BIDAGAIN", {
         let resp = `<break time="1s"/> Any bids of ${currbid} INR for ${this.attributes.objBid.name} ? <break time="1s"/> Any bids for ${currbid} ? Looks like there are no further bids for ${this.attributes.objBid.name} . <break time="2s"/> And he is <break time="1s"/> Sold! To ${this.attributes.teamchosen} for ${this.attributes.objBid.bid} INR!`;
 
         this.attributes.teamlist[this.attributes.teamcode].budget -= this.attributes.objBid.bid;
-        this.attributes.teamlist[this.attributes.teamcode].team.push(this.attributes.objBid.name);
+        this.attributes.teamlist[this.attributes.teamcode].team.push([this.attributes.objBid.name, this.attributes.objBid.points]);
 
         this.response.speak(resp).listen('You can ask for any other crypto\'s price.');
         this.emit(':responseReady');
@@ -257,7 +257,7 @@ var bidAgainHandlers = Alexa.CreateStateHandler("_BIDAGAIN", {
         let resp = `<break time="1s"/> Any bids of ${currbid} INR for ${this.attributes.objBid.name} ? <break time="1s"/> Any bids for ${currbid} ? Looks like there are no further bids for ${this.attributes.objBid.name} . <break time="2s"/> And he is <break time="1s"/> Sold! To ${this.attributes.teamlist[this.attributes.objBid.lastbidby].name} for ${this.attributes.objBid.bid} INR!`;
 
         this.attributes.teamlist[this.attributes.objBid.lastbidby].budget -= this.attributes.objBid.bid;
-        this.attributes.teamlist[this.attributes.objBid.lastbidby].team.push(this.attributes.objBid.name);
+        this.attributes.teamlist[this.attributes.objBid.lastbidby].team.push([this.attributes.objBid.name, this.attributes.objBid.points]);
 
         this.response.speak(resp).listen('You can ask for any other crypto\'s price.');
         this.emit(':responseReady');
@@ -349,6 +349,7 @@ function bidder(myteam, teamlist, player){
 function randomBid(randArr,teamlist, player){
     let obj = {
         resp: "",
+        points: player.points,
         name: player.name,
         lastbidby: "",
         bid: 0
@@ -394,6 +395,7 @@ function bidderNo(teamlist, player){
 function randomBidNo(randArr,teamlist, player){
     let obj = {
         resp: "",
+        points: player.points,
         name: player.name,
         lastbidby: "",
         bid: 0
